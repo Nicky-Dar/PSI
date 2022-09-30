@@ -54,3 +54,17 @@ microk8s join 10.23.209.1:25000/92b2db237428470dc4fcfc4ebbd9dc81/2c0cb3284b05
 microk8s join 172.17.0.1:25000/92b2db237428470dc4fcfc4ebbd9dc81/2c0cb3284b05
 Joining a node to the cluster should only take a few seconds. Afterwards
 ```
+
+> sudo nano /etc/hosts
+
+* 10.0.0.188 worker-2
+* 10.0.0.140 worker-1
+* 10.0.0.135 master
+
+> sudo nano /var/snap/microk8s/current/args/containerd-env
+
+* ulimit -c -1 || true
+* ulimit -n 1048576 || true
+
+after setup ulimit u need to stop and start microk8s service
+> sudo microk8s stop && sudo microk8s start
