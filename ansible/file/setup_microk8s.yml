@@ -1,0 +1,60 @@
+---
+- name: Setup Microk8s
+  hosts: all
+  become: true
+  tasks:
+    # Update & upgarde ubuntu system
+    - name: Update system
+      apt:
+        update_cache: yes
+    
+    - name: Upgrade system
+      apt:
+        upgrade: dist
+
+    - name: ulimit ubuntu
+      blockinfile:
+        path: /etc/security/limits.conf
+        backup: yes
+        block: |
+          ubuntu soft core -1       
+          ubuntu soft nofile 1048576
+
+    - name: Install microk8s
+      shell: "sudo snap install microk8s --classic"
+      args:
+        executable: /bin/bash
+
+    - name: usermod microk8s
+      shell: "sudo usermod -aG microk8s ubuntu"
+      args:
+        executable: /bin/bash
+        
+    - name: kubectl alias
+      shell: "sudo snap alias microk8s.kubectl kubectl"
+      args:
+        executable: /bin/bash
+
+    - name: replace ulimit -n line
+      lineinfile:
+        path: /var/snap/microk8s/current/args/containerd-env
+        regexp: '^(.*)ulimit -n(.*)$'                  
+        line: 'ulimit -n 1048576 || true'
+        backrefs: yes
+
+    - name: ulimit ubuntu
+      blockinfile:
+        path: /var/snap/microk8s/current/args/containerd-env
+        backup: yes
+        block: |
+          ulimit -c -1 || true
+
+
+    - name: restart microk8s
+      shell: "sudo microk8s stop && sudo microk8s start"
+      args:
+        executable: /bin/bash        
+
+    - name: Reboot a slow machine that might have lots of updates to apply
+      ansible.builtin.reboot:
+        reboot_timeout: 3600
